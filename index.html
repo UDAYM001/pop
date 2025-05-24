@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>POP Game - 20x20 Grid</title>
+    <style>
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      font-size: 14px;
+    }
+
+    h2 {
+      color: #ff00ff;
+      font-size: 32px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    #grid-container {
+      perspective: 800px;
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(20, 20px);
+      grid-template-rows: repeat(20, 20px);
+      justify-content: center;
+      gap: 1px;
+      transform-style: preserve-3d;
+      padding: 10px;
+    }
+
+    .cell {
+      width: 20px;
+      height: 20px;
+      background: rgba(26, 26, 42, 0.7);
+      border: 1.5px solid #ff00ff;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 3px rgba(255, 0, 255, 0.3);
+      color: white;
+      text-shadow: 0 0 3px #ff00ff;
+    }
+
+    .cell:hover {
+      background-color: #ff00ff;
+      color: #1a1a2e;
+      transform: scale(1.2) translateZ(10px);
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
+    }
+
+    .cell.show {
+      animation: pulse 0.5s ease-out;
+    }
+
+    .cell.pop-highlight {
+      background-color: #ff00ff;
+      color: #1a1a2e;
+      box-shadow: 0 0 15px rgba(255, 0, 255, 1);
+      animation: highlight 1s ease-out;
+    }
+
+    @keyframes highlight {
+      0% { transform: scale(1); background-color: #ff00ff; }
+      50% { transform: scale(1.3); background-color: #ffff00; }
+      100% { transform: scale(1); background-color: #ff00ff; }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    #controls {
+      margin-top: 20px;
+      width: 90%;
+      max-width: 400px;
+      padding: 10px 0;
+    }
+
+    #letterSelect {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 10px;
+    }
+
+    .letter-btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 2.5px solid #ff00ff;
+      border-radius: 50%;
+      background-color: rgba(26, 26, 42, 0.7);
+      color: #ff00ff;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+    }
+
+    .letter-btn:hover {
+      background-color: #ff00ff;
+      color: #1a1a2e;
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.9);
+      transform: scale(1.1);
+    }
+
+    .letter-btn.active {
+      background-color: #ff00ff;
+      color: #1a1a2e;
+      box-shadow: 0 0 20px rgba(255, 0, 255, 1);
+    }
+
+    /* Names styling */
+    #names {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ff00ff;
+      text-shadow: 0 0 5px #ff00ff;
+      letter-spacing: 1px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff; }
+      to { text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+    }
+
+    /* Score display */
+    #scores {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .score {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 8px #ff00ff;
+      padding: 8px 16px;
+      background-color: rgba(26, 26, 42, 0.8);
+      border: 2px solid #ff00ff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+    }
+
+    #currentPlayer {
+      margin-top: 15px;
+      font-size: 18px;
+      color: white;
+      text-shadow: 0 0 4px #ff00ff;
+      background-color: rgba(26, 26, 42, 0.8);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 2px solid #ff00ff;
+      display: inline-block;
+    }
+
+    #gameMessage {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffff00;
+      text-shadow: 0 0 6px #ffff00;
+      min-height: 30px;
+    }
+
+    /* Chat Box (if added later) */
+    #chatBox {
+      width: 95%;
+      max-width: 400px;
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    #messages {
+      height: 120px;
+      overflow-y: auto;
+      background: rgba(40, 40, 60, 0.8);
+      border: 2px solid #ff00ff;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    #chatInput {
+      width: 70%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    #sendBtn {
+      padding: 8px 12px;
+      background-color: #ff00ff;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 769px) {
+      #grid {
+        grid-template-columns: repeat(20, 28px);
+        grid-template-rows: repeat(20, 28px);
+        gap: 2px;
+      }
+
+      .cell {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        line-height: 28px;
+      }
+
+      .letter-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+      }
+
+      #scores {
+        gap: 120px;
+      }
+
+      .score {
+        font-size: 36px;
+        padding: 10px 20px;
+        border-radius: 10px;
+      }
+
+      #currentPlayer {
+        font-size: 24px;
+        padding: 10px 20px;
+        border-radius: 10px;
+      }
+
+      #gameMessage {
+        font-size: 26px;
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>POP GAME</h2>
+
+  <button id="startGameBtn" style="
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #00ffcc;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.6);
+">
+  🚀 Start Game
+</button>
+
+
+<div id="gameContainer" style="display: none;">
+
+  <!-- Exit Game Button -->
+<button id="exitGameBtn" style="
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #ff3b30;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
+">
+  <span style="margin-right: 5px;">🚪</span> Exit Game
+</button>
+
+  <div id="scores">
+    <div class="score" id="scoreP">PLAYER 1: 0</div>
+    <div class="score" id="scoreO">PLAYER 2: 0</div>
+  </div>
+
+  <div id="currentPlayer">Current Turn: PLAYER 1</div>
+  
+  <div id="gameMessage"></div>
+
+  <div id="grid-container">
+    <div id="grid"></div>
+  </div>
+
+  <div id="controls">
+    <div id="letterSelect">
+      <span id="selectP" class="letter-btn active">P</span>
+      <span id="selectO" class="letter-btn">O</span>
+    </div>
+  </div>
+
+  <!-- Chat Section -->
+  <div id="chatBox" style="margin-top: 30px; width: 90%; max-width: 500px; text-align: left;">
+    <h3 style="color: #ff00ff;">💬 Chat</h3>
+    <div id="messages" style="height: 150px; overflow-y: auto; background: rgba(40,40,60,0.7); border: 2px solid #ff00ff; padding: 10px; border-radius: 10px;"></div>
+    <div style="display: flex; margin-top: 10px;">
+      <input type="text" id="chatInput" placeholder="Type a message..." style="flex:1; padding: 10px; font-size: 16px; border: none; border-radius: 5px;" />
+      <button id="sendBtn" style="padding: 10px 15px; background-color: #ff00ff; color: #1a1a2e; border: none; border-radius: 5px; margin-left: 10px; cursor: pointer;">Send</button>
+    </div>
+  </div>
+</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  const socket = io();
+    document.addEventListener('DOMContentLoaded', function () {
+      const grid = document.getElementById("grid");
+      const gameMessage = document.getElementById("gameMessage");
+      const currentPlayerDisplay = document.getElementById("currentPlayer");
+      const scoreP = document.getElementById("scoreP");
+      const scoreO = document.getElementById("scoreO");
+      const selectP = document.getElementById("selectP");
+      const selectO = document.getElementById("selectO");
+
+      let selectedLetter = "P";
+      let localPlayer = "";
+      let currentPlayer = "PLAYER 1"; // Will be updated by server
+      let scores = { "PLAYER 1": 0, "PLAYER 2": 0 };
+      let gridData = Array(20).fill().map(() => Array(20).fill(""));
+      let cellsRemaining = 20 * 20;
+      let lastPlacedCell = null;
+
+      // Receive assigned player role
+      socket.on('assignRole', (role) => {
+        localPlayer = role;
+        alert(`You are ${localPlayer}`);
+      });
+
+      // When both players are connected
+      socket.on('gameReady', () => {
+        currentPlayer = "PLAYER 1";
+        currentPlayerDisplay.textContent = "Current Turn: PLAYER 1";
+      });
+
+      // Update current player from server
+      socket.on('turnUpdate', (turn) => {
+        currentPlayer = turn;
+        currentPlayerDisplay.textContent = `Current Turn: ${turn}`;
+        updateInteractionEnabled();
+      });
+
+      // Handle remote moves
+      socket.on('updateGame', (data) => {
+        const { row, col, letter, player, pops } = data;
+        const index = row * 20 + col;
+        const cell = document.querySelectorAll('.cell')[index];
+        if (cell.textContent === "") {
+          cell.textContent = letter;
+          cell.style.color = player === "PLAYER 1" ? "#00ffcc" : "#ffff00";
+          gridData[row][col] = letter;
+          cellsRemaining--;
+
+          if (pops && pops.length > 0) {
+            scores[player] += pops.length;
+            updateScores();
+            highlightPOP(pops);
+            gameMessage.textContent = `${player} found ${pops.length} POP${pops.length > 1 ? 's' : ''}!`;
+            setTimeout(() => {
+              gameMessage.textContent = "";
+            }, 2000);
+          }
+
+          cell.classList.add("show");
+          setTimeout(() => {
+            cell.classList.remove("show");
+          }, 500);
+        }
+      });
+
+      // Disable interaction if not current player's turn
+      function updateInteractionEnabled() {
+        const allCells = document.querySelectorAll('.cell');
+        allCells.forEach(cell => {
+          cell.style.pointerEvents = (currentPlayer === localPlayer) ? 'auto' : 'none';
+        });
+      }
+
+      socket.on('playerDisconnected', () => {
+        gameMessage.textContent = "Opponent disconnected. Waiting...";
+      });
+
+      function updateScores() {
+        scoreP.textContent = "PLAYER 1: " + scores["PLAYER 1"];
+        scoreO.textContent = "PLAYER 2: " + scores["PLAYER 2"];
+      }
+
+      function checkForPOP(row, col) {
+        const directions = [
+          [[0, 0], [0, 1], [0, 2]],
+          [[0, -1], [0, 0], [0, 1]],
+          [[0, -2], [0, -1], [0, 0]],
+          [[0, 0], [1, 0], [2, 0]],
+          [[-1, 0], [0, 0], [1, 0]],
+          [[-2, 0], [-1, 0], [0, 0]],
+          [[0, 0], [1, 1], [2, 2]],
+          [[-1, -1], [0, 0], [1, 1]],
+          [[-2, -2], [-1, -1], [0, 0]],
+          [[0, 0], [1, -1], [2, -2]],
+          [[-1, 1], [0, 0], [1, -1]],
+          [[-2, 2], [-1, 1], [0, 0]]
+        ];
+        let popsFound = [];
+        directions.forEach(direction => {
+          let letters = [];
+          let cells = [];
+          for (let i = 0; i < 3; i++) {
+            const r = row + direction[i][0];
+            const c = col + direction[i][1];
+            if (r >= 0 && r < 20 && c >= 0 && c < 20) {
+              letters.push(gridData[r][c]);
+              cells.push({ row: r, col: c });
+            } else {
+              letters.push("");
+            }
+          }
+          if (letters.join("") === "POP") {
+            popsFound.push(cells);
+          }
+        });
+        return popsFound;
+      }
+
+      function highlightPOP(popCells) {
+        const allCells = [].concat(...popCells);
+        allCells.forEach(cell => {
+          const index = cell.row * 20 + cell.col;
+          const cellElement = document.querySelectorAll('.cell')[index];
+          cellElement.classList.add('pop-highlight');
+          setTimeout(() => {
+            cellElement.classList.remove('pop-highlight');
+          }, 1000);
+        });
+      }
+
+      // Letter selection - send selection + color to server
+      selectP.onclick = () => {
+        if (currentPlayer === localPlayer) {
+          selectedLetter = "P";
+          selectP.classList.add("active");
+          selectO.classList.remove("active");
+          socket.emit('updateSelection', { player: localPlayer, letter: "P" });
+        }
+      };
+
+      selectO.onclick = () => {
+        if (currentPlayer === localPlayer) {
+          selectedLetter = "O";
+          selectO.classList.add("active");
+          selectP.classList.remove("active");
+          socket.emit('updateSelection', { player: localPlayer, letter: "O" });
+        }
+      };
+
+      // Create grid
+      for (let i = 0; i < 20 * 20; i++) {
+        const row = Math.floor(i / 20);
+        const col = i % 20;
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.row = row;
+        cell.dataset.col = col;
+        cell.onclick = () => {
+          if (currentPlayer !== localPlayer || cell.textContent !== "") return;
+
+          cell.textContent = selectedLetter;
+          cell.style.color = localPlayer === "PLAYER 1" ? "#00ffcc" : "#ffff00";
+          gridData[row][col] = selectedLetter;
+          cellsRemaining--;
+
+          const pops = checkForPOP(row, col);
+
+          if (pops.length > 0) {
+            scores[currentPlayer] += pops.length;
+            updateScores();
+            highlightPOP(pops);
+            gameMessage.textContent = `${currentPlayer} found ${pops.length} POP${pops.length > 1 ? 's' : ''}!`;
+            setTimeout(() => {
+              gameMessage.textContent = "";
+            }, 2000);
+          }
+
+          socket.emit('placeLetter', {
+            row,
+            col,
+            letter: selectedLetter,
+            player: localPlayer,
+            pops
+          });
+
+          if (pops.length === 0) {
+            socket.emit('switchTurn');
+          }
+
+          cell.classList.add("show");
+          setTimeout(() => {
+            cell.classList.remove("show");
+          }, 500);
+        };
+        grid.appendChild(cell);
+      }
+
+      // 🧾 Chat Functionality Added Below — No Changes to Existing Code Above
+
+      const chatInput = document.getElementById("chatInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const messagesDiv = document.getElementById("messages");
+
+      sendBtn.onclick = () => {
+        const message = chatInput.value.trim();
+        if (message !== "") {
+          const messageData = {
+            text: message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          socket.emit('sendMessage', messageData);
+          appendMessage(messageData, true);
+          chatInput.value = "";
+        }
+      };
+
+      chatInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendBtn.click();
+        }
+      });
+
+      socket.on('receiveMessage', (messageData) => {
+        appendMessage(messageData, false);
+      });
+
+      function appendMessage(messageData, isLocal) {
+        const msg = document.createElement("div");
+        msg.style.margin = "5px 0";
+        msg.style.fontWeight = "bold";
+
+        if (isLocal) {
+          msg.textContent = `You (${messageData.time}): ${messageData.text}`;
+          msg.style.color = "#00ffff";
+        } else {
+          msg.textContent = `${messageData.player} (${messageData.time}): ${messageData.text}`;
+          msg.style.color = "#ffccff";
+        }
+
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Exit Game Button
+      const exitGameBtn = document.getElementById("exitGameBtn");
+
+      exitGameBtn.onclick = () => {
+        if (confirm("Are you sure you want to end the game?")) {
+          socket.emit('playerExit');
+        }
+      };
+
+      // Listen for global game end signal from server
+      socket.on('endGame', () => {
+        alert("The game has ended.");
+        window.location.href = "/"; // Redirect to homepage or login
+      });
+
+    });
+
+    document.getElementById("startGameBtn").addEventListener("click", function () {
+      document.getElementById("gameContainer").style.display = "block";
+      this.style.display = "none"; // hide the button after starting
+    });
+
+  </script>
+</body>
+</html>
